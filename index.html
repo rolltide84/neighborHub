@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeighborHub - Montgomery Community Resources</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    }
+    .emergency-pulse {
+      animation: pulse-red 2s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // Simplified service data
+    const serviceData = {
+      'addiction-treatment': [
+        {
+          name: 'Bradford Health Services Montgomery',
+          address: '1850 Winton Blount Loop, Montgomery, AL 36117',
+          phone: '(334) 279-7760',
+          website: 'www.bradfordhealth.com',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Comprehensive addiction treatment programs'
+        }
+      ],
+      'legal-services': [
+        {
+          name: 'Legal Services Alabama',
+          address: '207 Montgomery St Suite 800, Montgomery, AL 36104',
+          phone: '(334) 832-4570',
+          hours: 'Mon-Fri: 8:30am-5pm',
+          description: 'Free legal services for low-income individuals'
+        }
+      ],
+      'mental-health': [
+        {
+          name: 'Montgomery Area Mental Health Authority',
+          address: '101 Coliseum Blvd, Montgomery, AL 36109',
+          phone: '(334) 279-7830',
+          hours: '24/7 Crisis Line: (334) 279-7837',
+          description: 'Mental health services and crisis support'
+        }
+      ],
+      'housing-assistance': [
+        {
+          name: 'Montgomery Housing Authority',
+          address: '525 S Lawrence St, Montgomery, AL 36104',
+          phone: '(334) 832-7330',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Public housing and Section 8 programs'
+        }
+      ],
+      'emergency-shelter': [
+        {
+          name: 'Family Sunshine Center',
+          address: '2804 Mt Meigs Rd, Montgomery, AL 36107',
+          phone: '(334) 263-6698',
+          hours: '24/7',
+          description: 'Emergency shelter for families with children'
+        }
+      ],
+      'food-meals': [
+        {
+          name: 'Montgomery Area Food Bank',
+          address: '521 Trade Center St, Montgomery, AL 36108',
+          phone: '(334) 263-3784',
+          hours: 'Mon-Fri: 8am-4pm',
+          description: 'Food distribution and pantry network'
+        }
+      ],
+      'baby-supplies': [
+        {
+          name: 'Montgomery Area Baby Pantry',
+          address: '4101 Carmichael Rd, Montgomery, AL 36106',
+          phone: '(334) 356-8658',
+          hours: 'Mon & Wed: 9am-12pm',
+          description: 'Free diapers, formula, and baby supplies'
+        }
+      ],
+      'education-tutoring': [
+        {
+          name: 'Montgomery Public Library',
+          address: '245 High St, Montgomery, AL 36104',
+          phone: '(334) 240-4300',
+          hours: 'Mon-Sat: varies',
+          description: 'Free tutoring and educational programs'
+        }
+      ],
+      'community-service': [
+        {
+          name: 'River Region United Way',
+          address: '600 S Court St Suite 400, Montgomery, AL 36104',
+          phone: '(334) 263-7000',
+          hours: 'Mon-Fri: 8:30am-5pm',
+          description: 'Volunteer and community service opportunities'
+        }
+      ],
+      'job-training': [
+        {
+          name: 'Alabama Career Center',
+          address: '3584 Mobile Hwy, Montgomery, AL 36108',
+          phone: '(334) 293-5200',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Job search assistance and training programs'
+        }
+      ],
+      'healthcare': [
+        {
+          name: 'Montgomery Community Health Center',
+          address: '3060 Mobile Hwy, Montgomery, AL 36108',
+          phone: '(334) 284-4100',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Affordable primary care and dental services'
+        }
+      ],
+      'transportation': [
+        {
+          name: 'Montgomery Area Transit (The M)',
+          phone: '(334) 262-7321',
+          hours: 'Mon-Sat: 5:30am-8:30pm',
+          description: 'Public bus transportation'
+        }
+      ]
+    };
+
+    const crisisResources = [
+      { name: 'Emergency Services', phone: '911', description: 'Police, Fire, Medical emergencies' },
+      { name: 'National Suicide Prevention', phone: '988', description: '24/7 crisis support' },
+      { name: 'Domestic Violence Hotline', phone: '1-800-799-7233', description: '24/7 support' },
+      { name: '211 Information', phone: '211', description: 'Connect with resources 24/7' }
+    ];
+
+    const situations = [
+      { id: 'homeless', label: 'I need emergency shelter', emoji: '🏠', services: ['emergency-shelter', 'food-meals'] },
+      { id: 'food', label: 'I need food for my family', emoji: '🍽️', services: ['food-meals', 'baby-supplies'] },
+      { id: 'job', label: 'I just lost my job', emoji: '💼', services: ['job-training', 'housing-assistance'] },
+      { id: 'eviction', label: "I'm facing eviction", emoji: '⚠️', services: ['housing-assistance', 'legal-services'] },
+      { id: 'addiction', label: 'I need help with addiction', emoji: '💊', services: ['addiction-treatment', 'mental-health'] },
+      { id: 'crisis', label: "I'm in a mental health crisis", emoji: '🆘', services: ['mental-health'] },
+      { id: 'violence', label: 'I need to escape violence', emoji: '🛡️', services: ['emergency-shelter', 'legal-services'] },
+      { id: 'parent', label: "I'm a new parent", emoji: '👶', services: ['baby-supplies', 'healthcare'] }
+    ];
+
+    function NeighborHub() {
+      const [view, setView] = useState('home');
+      const [step, setStep] = useState(1);
+      const [showCrisis, setShowCrisis] = useState(false);
+      const [formData, setFormData] = useState({
+        firstName: '',
+        phone: '',
+        zipCode: '',
+        selectedServices: []
+      });
+      const [results, setResults] = useState([]);
+
+      const serviceCategories = [
+        { id: 'addiction-treatment', label: 'Addiction Treatment', emoji: '💊' },
+        { id: 'legal-services', label: 'Legal Services', emoji: '⚖️' },
+        { id: 'mental-health', label: 'Mental Health', emoji: '🧠' },
+        { id: 'housing-assistance', label: 'Housing', emoji: '🏠' },
+        { id: 'emergency-shelter', label: 'Emergency Shelter', emoji: '🛏️' },
+        { id: 'food-meals', label: 'Food & Meals', emoji: '🍽️' },
+        { id: 'baby-supplies', label: 'Baby Supplies', emoji: '👶' },
+        { id: 'education-tutoring', label: 'Education', emoji: '📚' },
+        { id: 'community-service', label: 'Community Service', emoji: '🤝' },
+        { id: 'job-training', label: 'Job Training', emoji: '💼' },
+        { id: 'healthcare', label: 'Healthcare', emoji: '🏥' },
+        { id: 'transportation', label: 'Transportation', emoji: '🚌' }
+      ];
+
+      const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+      };
+
+      const toggleService = (id) => {
+        const services = formData.selectedServices.includes(id)
+          ? formData.selectedServices.filter(s => s !== id)
+          : [...formData.selectedServices, id];
+        setFormData({ ...formData, selectedServices: services });
+      };
+
+      const selectSituation = (situation) => {
+        setFormData({ ...formData, selectedServices: situation.services });
+        setView('form');
+        setStep(2);
+      };
+
+      const findResources = () => {
+        const matched = [];
+        formData.selectedServices.forEach(serviceId => {
+          const category = serviceCategories.find(c => c.id === serviceId);
+          const providers = serviceData[serviceId] || [];
+          if (providers.length > 0) {
+            matched.push({
+              category: category.label,
+              emoji: category.emoji,
+              providers: providers
+            });
+          }
+        });
+        setResults(matched);
+        setView('results');
+      };
+
+      const reset = () => {
+        setFormData({ firstName: '', phone: '', zipCode: '', selectedServices: [] });
+        setResults([]);
+        setView('home');
+        setStep(1);
+      };
+
+      // HOME VIEW
+      if (view === 'home') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 p-4">
+            <button
+              onClick={() => setShowCrisis(!showCrisis)}
+              className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-red-700 emergency-pulse z-50"
+            >
+              🚨 EMERGENCY
+            </button>
+
+            {showCrisis && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowCrisis(false)}>
+                <div className="bg-white rounded-3xl p-8 max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-3xl font-bold mb-6">🆘 Crisis Resources</h2>
+                  <div className="space-y-4 mb-6">
+                    {crisisResources.map((r, i) => (
+                      <div key={i} className="p-4 bg-red-50 rounded-xl border-2 border-red-300">
+                        <h3 className="font-bold text-lg">{r.name}</h3>
+                        <p className="text-gray-600 mb-2">{r.description}</p>
+                        <a href={`tel:${r.phone}`} className="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                          Call {r.phone}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowCrisis(false)} className="w-full bg-gray-200 py-3 rounded-xl font-bold">
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-green-600 rounded-2xl mb-4">
+                  <span className="text-4xl">❤️</span>
+                </div>
+                <h1 className="text-6xl font-bold mb-3 bg-gradient-to-r from-blue-600 via-teal-600 to-green-600 bg-clip-text text-transparent">
+                  NeighborHub
+                </h1>
+                <p className="text-2xl text-gray-600">
+                  Connecting Montgomery's community with essential services
+                </p>
+              </div>
+
+              <h2 className="text-2xl font-bold text-center mb-6">What's your situation?</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                {situations.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => selectSituation(s)}
+                    className="p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-blue-500 hover:shadow-xl transition-all text-left"
+                  >
+                    <div className="text-4xl mb-3">{s.emoji}</div>
+                    <h3 className="font-bold">{s.label}</h3>
+                  </button>
+                ))}
+              </div>
+
+              <div className="text-center">
+                <button
+                  onClick={() => { setView('form'); setStep(1); }}
+                  className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl"
+                >
+                  Browse All Services →
+                </button>
+                <p className="mt-4 text-gray-600">Or call 2-1-1 to speak with someone 24/7</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // FORM VIEW
+      if (view === 'form') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 p-4">
+            <button
+              onClick={() => setShowCrisis(!showCrisis)}
+              className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-red-700 emergency-pulse z-50"
+            >
+              🚨 EMERGENCY
+            </button>
+
+            {showCrisis && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowCrisis(false)}>
+                <div className="bg-white rounded-3xl p-8 max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-3xl font-bold mb-6">🆘 Crisis Resources</h2>
+                  <div className="space-y-4 mb-6">
+                    {crisisResources.map((r, i) => (
+                      <div key={i} className="p-4 bg-red-50 rounded-xl border-2 border-red-300">
+                        <h3 className="font-bold text-lg">{r.name}</h3>
+                        <p className="text-gray-600 mb-2">{r.description}</p>
+                        <a href={`tel:${r.phone}`} className="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                          Call {r.phone}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowCrisis(false)} className="w-full bg-gray-200 py-3 rounded-xl font-bold">
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="max-w-4xl mx-auto">
+              <button onClick={() => setView('home')} className="mb-6 text-blue-600 font-bold">
+                ← Back to Home
+              </button>
+
+              {step === 1 && (
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                  <h2 className="text-3xl font-bold mb-6">Your Information</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block font-bold mb-2">First Name</label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                        placeholder="(334) 555-1234"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold mb-2">ZIP Code</label>
+                      <input
+                        type="text"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none"
+                        placeholder="36104"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setStep(2)}
+                      className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl font-bold text-lg mt-6"
+                    >
+                      Continue to Services →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                  <h2 className="text-3xl font-bold mb-6">Choose Your Services</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    {serviceCategories.map(s => {
+                      const selected = formData.selectedServices.includes(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => toggleService(s.id)}
+                          className={`p-4 rounded-2xl border-2 transition-all ${
+                            selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                          }`}
+                        >
+                          <div className="text-3xl mb-2">{s.emoji}</div>
+                          <div className="font-bold text-sm">{s.label}</div>
+                          {selected && <div className="text-blue-600 text-xs mt-1">✓ Selected</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-4">
+                    <button onClick={() => setStep(1)} className="flex-1 bg-gray-200 py-4 rounded-xl font-bold">
+                      Back
+                    </button>
+                    <button
+                      onClick={findResources}
+                      disabled={formData.selectedServices.length === 0}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl font-bold disabled:opacity-50"
+                    >
+                      Find Resources
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // RESULTS VIEW
+      if (view === 'results') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 p-4">
+            <button
+              onClick={() => setShowCrisis(!showCrisis)}
+              className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-red-700 emergency-pulse z-50"
+            >
+              🚨 EMERGENCY
+            </button>
+
+            {showCrisis && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowCrisis(false)}>
+                <div className="bg-white rounded-3xl p-8 max-w-2xl w-full" onClick={e => e.stopPropagation()}>
+                  <h2 className="text-3xl font-bold mb-6">🆘 Crisis Resources</h2>
+                  <div className="space-y-4 mb-6">
+                    {crisisResources.map((r, i) => (
+                      <div key={i} className="p-4 bg-red-50 rounded-xl border-2 border-red-300">
+                        <h3 className="font-bold text-lg">{r.name}</h3>
+                        <p className="text-gray-600 mb-2">{r.description}</p>
+                        <a href={`tel:${r.phone}`} className="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                          Call {r.phone}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowCrisis(false)} className="w-full bg-gray-200 py-3 rounded-xl font-bold">
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="max-w-6xl mx-auto">
+              <div className="bg-gradient-to-r from-blue-600 to-green-600 rounded-3xl p-8 text-white mb-6">
+                <h2 className="text-3xl font-bold mb-2">Welcome, {formData.firstName}! 👋</h2>
+                <p className="text-xl">Found {results.reduce((acc, r) => acc + r.providers.length, 0)} resources</p>
+                <button onClick={reset} className="mt-4 bg-white text-blue-600 px-6 py-2 rounded-xl font-bold">
+                  New Search
+                </button>
+              </div>
+
+              {results.map((cat, i) => (
+                <div key={i} className="bg-white rounded-3xl shadow-xl p-8 mb-6">
+                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                    <span className="text-3xl">{cat.emoji}</span>
+                    {cat.category}
+                  </h3>
+                  {cat.providers.map((p, j) => (
+                    <div key={j} className="mb-6 p-6 bg-gray-50 rounded-2xl">
+                      <h4 className="text-xl font-bold mb-2">{p.name}</h4>
+                      <p className="text-gray-600 mb-4">{p.description}</p>
+                      <div className="grid md:grid-cols-2 gap-3 mb-4">
+                        {p.address && (
+                          <div className="p-3 bg-white rounded-xl border">
+                            📍 {p.address}
+                          </div>
+                        )}
+                        {p.phone && (
+                          <div className="p-3 bg-white rounded-xl border">
+                            📞 {p.phone}
+                          </div>
+                        )}
+                        {p.website && (
+                          <div className="p-3 bg-white rounded-xl border">
+                            🌐 {p.website}
+                          </div>
+                        )}
+                        {p.hours && (
+                          <div className="p-3 bg-white rounded-xl border">
+                            🕐 {p.hours}
+                          </div>
+                        )}
+                      </div>
+                      
+                        href={`tel:${p.phone}`}
+                        className="inline-block bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700"
+                      >
+                        📞 Call Now
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              <div className="bg-gradient-to-r from-teal-500 to-blue-500 rounded-3xl p-8 text-white">
+                <h3 className="text-2xl font-bold mb-2">Need More Help?</h3>
+                <p className="text-xl mb-4">
+                  Call <span className="font-bold">2-1-1</span> or <span className="font-bold">(334) 263-7000</span> 24/7
+                </p>
+                <p className="text-sm">🚨 Emergency? Dial <span className="font-bold">9-1-1</span></p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    ReactDOM.render(<NeighborHub />, document.getElementById('root'));
+  </script>
+</body>
+</html>
