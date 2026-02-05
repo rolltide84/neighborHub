@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeighborHub - Montgomery Community Resources</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+    }
+    .print-only { display: none; }
+    
+    /* Emergency button pulse animation */
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    }
+    .emergency-pulse {
+      animation: pulse-red 2s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Enhanced Service Data with MORE details
+    const serviceData = {
+      'addiction-treatment': [
+        {
+          name: 'Bradford Health Services Montgomery',
+          address: '1850 Winton Blount Loop, Montgomery, AL 36117',
+          phone: '(334) 279-7760',
+          email: 'info@bradfordhealth.com',
+          website: 'www.bradfordhealth.com',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Comprehensive addiction treatment programs including detox, residential, and outpatient services',
+          documentsNeeded: ['Photo ID', 'Insurance card (if applicable)', 'List of current medications'],
+          eligibility: { income: 'All income levels', insurance: 'Accepts most insurance and Medicaid' },
+          languages: ['English', 'Spanish'],
+          waitTime: '24-48 hours for intake',
+          emergency: false
+        },
+        {
+          name: 'Substance Abuse Services Center',
+          address: '2140 Upper Wetumpka Rd, Montgomery, AL 36107',
+          phone: '(334) 263-7337',
+          hours: '24/7 Crisis Line',
+          description: 'Outpatient counseling, group therapy, and family support services',
+          documentsNeeded: ['Photo ID', 'Proof of residence'],
+          eligibility: { income: 'Sliding scale fees available' },
+          languages: ['English'],
+          waitTime: 'Same day crisis support',
+          emergency: true
+        }
+      ],
+      'legal-services': [
+        {
+          name: 'Legal Services Alabama - Montgomery Office',
+          address: '207 Montgomery St Suite 800, Montgomery, AL 36104',
+          phone: '(334) 832-4570',
+          email: 'intake@legalservicesalabama.org',
+          hours: 'Mon-Fri: 8:30am-5pm',
+          description: 'Free legal services for low-income individuals in civil matters',
+          documentsNeeded: ['Photo ID', 'Proof of income', 'Any legal documents related to case'],
+          eligibility: { income: '125% of federal poverty level or below' },
+          languages: ['English', 'Spanish'],
+          waitTime: '1-2 weeks for appointment',
+          emergency: false
+        }
+      ],
+      'mental-health': [
+        {
+          name: 'Montgomery Area Mental Health Authority',
+          address: '101 Coliseum Blvd, Montgomery, AL 36109',
+          phone: '(334) 279-7830',
+          hours: '24/7 Crisis Line: (334) 279-7837',
+          description: 'Comprehensive mental health services including crisis intervention, therapy, and medication management',
+          documentsNeeded: ['Photo ID', 'Insurance card or Medicaid card', 'Income verification'],
+          eligibility: { income: 'All income levels accepted' },
+          languages: ['English', 'Spanish'],
+          waitTime: 'Crisis: immediate. Regular appointments: 1-3 weeks',
+          emergency: true
+        },
+        {
+          name: 'Family Guidance Center of Alabama',
+          address: '1130 Harold Dr, Montgomery, AL 36107',
+          phone: '(334) 272-5266',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Counseling services for children, families, and adults',
+          documentsNeeded: ['Photo ID', 'Insurance card'],
+          eligibility: { income: 'Sliding scale available' },
+          languages: ['English'],
+          waitTime: '2-4 weeks',
+          emergency: false
+        }
+      ],
+      'housing-assistance': [
+        {
+          name: 'Montgomery Housing Authority',
+          address: '525 S Lawrence St, Montgomery, AL 36104',
+          phone: '(334) 832-7330',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Public housing and Section 8 voucher programs',
+          documentsNeeded: ['Photo ID', 'Social Security cards for all household members', 'Birth certificates', 'Proof of income', 'Current lease/eviction notice'],
+          eligibility: { income: '50% or below area median income' },
+          languages: ['English'],
+          waitTime: 'Waiting list may apply',
+          emergency: false
+        }
+      ],
+      'emergency-shelter': [
+        {
+          name: 'Family Sunshine Center',
+          address: '2804 Mt Meigs Rd, Montgomery, AL 36107',
+          phone: '(334) 263-6698',
+          hours: '24/7',
+          description: 'Emergency shelter for homeless families with children',
+          documentsNeeded: ['Photo ID', 'Birth certificates of children'],
+          eligibility: { income: 'Homeless families with children' },
+          languages: ['English'],
+          waitTime: 'Call for availability',
+          emergency: true
+        },
+        {
+          name: 'Rescue Mission of Montgomery',
+          address: '907 W Jeff Davis Ave, Montgomery, AL 36104',
+          phone: '(334) 265-1105',
+          hours: '24/7',
+          description: 'Emergency shelter, meals, and recovery programs',
+          documentsNeeded: ['Photo ID (preferred but not required)'],
+          eligibility: { income: 'Open to all' },
+          languages: ['English'],
+          waitTime: 'Same day',
+          emergency: true
+        }
+      ],
+      'food-meals': [
+        {
+          name: 'Montgomery Area Food Bank',
+          address: '521 Trade Center St, Montgomery, AL 36108',
+          phone: '(334) 263-3784',
+          hours: 'Mon-Fri: 8am-4pm',
+          description: 'Food distribution and partner pantry network',
+          documentsNeeded: ['Photo ID', 'Proof of address'],
+          eligibility: { income: 'Income guidelines apply' },
+          languages: ['English', 'Spanish'],
+          waitTime: 'Same day service',
+          emergency: false
+        },
+        {
+          name: 'Loaves & Fishes',
+          address: '1029 Rosa L Parks Ave, Montgomery, AL 36108',
+          phone: '(334) 262-2280',
+          hours: 'Tue & Thu: 10am-12pm',
+          description: 'Free groceries for families in need',
+          documentsNeeded: ['Proof of address'],
+          eligibility: { income: 'Low-income families' },
+          languages: ['English'],
+          waitTime: 'Walk-in, minimal wait',
+          emergency: false
+        }
+      ],
+      'baby-supplies': [
+        {
+          name: 'Montgomery Area Baby Pantry',
+          address: '4101 Carmichael Rd, Montgomery, AL 36106',
+          phone: '(334) 356-8658',
+          hours: 'Mon & Wed: 9am-12pm',
+          description: 'Free diapers, formula, baby food, and supplies',
+          documentsNeeded: ['Photo ID', 'Proof of child\'s age'],
+          eligibility: { income: 'Low-income families' },
+          languages: ['English'],
+          waitTime: 'Walk-in welcome',
+          emergency: false
+        },
+        {
+          name: 'WIC Program - Montgomery County',
+          address: '3060 Mobile Hwy, Montgomery, AL 36108',
+          phone: '(334) 284-0430',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Nutrition program providing formula, food, and nutrition education for women, infants, and children',
+          documentsNeeded: ['Photo ID', 'Proof of income', 'Proof of residency', 'Immunization records'],
+          eligibility: { income: '185% of federal poverty level' },
+          languages: ['English', 'Spanish'],
+          waitTime: '1-2 weeks for appointment',
+          emergency: false
+        }
+      ],
+      'education-tutoring': [
+        {
+          name: 'Montgomery Public Library - Homework Help',
+          address: '245 High St, Montgomery, AL 36104',
+          phone: '(334) 240-4300',
+          hours: 'Mon-Sat: varies by location',
+          description: 'Free tutoring and educational programs',
+          documentsNeeded: ['Library card (free to get)'],
+          eligibility: { income: 'Open to all' },
+          languages: ['English'],
+          waitTime: 'Drop-in',
+          emergency: false
+        }
+      ],
+      'community-service': [
+        {
+          name: 'River Region United Way Volunteer Center',
+          address: '600 S Court St Suite 400, Montgomery, AL 36104',
+          phone: '(334) 263-7000',
+          hours: 'Mon-Fri: 8:30am-5pm',
+          description: 'Connects volunteers with community service opportunities',
+          documentsNeeded: ['Photo ID'],
+          eligibility: { income: 'Open to all' },
+          languages: ['English'],
+          waitTime: 'Varies by program',
+          emergency: false
+        }
+      ],
+      'job-training': [
+        {
+          name: 'Alabama Career Center - Montgomery',
+          address: '3584 Mobile Hwy, Montgomery, AL 36108',
+          phone: '(334) 293-5200',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Job search assistance, resume help, and training programs',
+          documentsNeeded: ['Photo ID', 'Social Security card', 'Resume (they can help create one)'],
+          eligibility: { income: 'Open to all job seekers' },
+          languages: ['English'],
+          waitTime: 'Walk-in welcome',
+          emergency: false
+        },
+        {
+          name: 'Goodwill Career Solutions',
+          address: '1015 S Decatur St, Montgomery, AL 36104',
+          phone: '(334) 263-9736',
+          hours: 'Mon-Fri: 9am-5pm',
+          description: 'Job training, placement, and career counseling',
+          documentsNeeded: ['Photo ID'],
+          eligibility: { income: 'Open to all' },
+          languages: ['English'],
+          waitTime: 'Appointment preferred',
+          emergency: false
+        }
+      ],
+      'healthcare': [
+        {
+          name: 'Montgomery Community Health Center',
+          address: '3060 Mobile Hwy, Montgomery, AL 36108',
+          phone: '(334) 284-4100',
+          hours: 'Mon-Fri: 8am-5pm',
+          description: 'Affordable primary care, dental, and pharmacy services',
+          documentsNeeded: ['Photo ID', 'Insurance card or proof of income'],
+          eligibility: { income: 'Sliding scale fees' },
+          languages: ['English', 'Spanish'],
+          waitTime: '1-2 weeks for new patients',
+          emergency: false
+        },
+        {
+          name: 'River Region Medical Center ER',
+          address: '3700 Fob James Dr, Montgomery, AL 36108',
+          phone: '(334) 283-7000',
+          hours: '24/7',
+          description: 'Emergency medical services',
+          documentsNeeded: ['Photo ID (if available)'],
+          eligibility: { income: 'Emergency care for all' },
+          languages: ['English', 'Spanish'],
+          waitTime: 'Immediate',
+          emergency: true
+        }
+      ],
+      'transportation': [
+        {
+          name: 'Montgomery Area Transit System (The M)',
+          phone: '(334) 262-7321',
+          website: 'montgomeryal.gov/departments/transit',
+          hours: 'Mon-Sat: 5:30am-8:30pm',
+          description: 'Public bus transportation with reduced fare programs',
+          documentsNeeded: ['Medicare card or disability documentation for reduced fare'],
+          eligibility: { income: 'Open to all' },
+          languages: ['English'],
+          waitTime: 'Check schedule',
+          emergency: false
+        }
+      ]
+    };
+
+    // Crisis Resources
+    const crisisResources = [
+      {
+        name: 'National Suicide Prevention Lifeline',
+        phone: '988',
+        description: '24/7 crisis support',
+        type: 'crisis'
+      },
+      {
+        name: 'Domestic Violence Hotline',
+        phone: '1-800-799-7233',
+        description: '24/7 support for abuse victims',
+        type: 'crisis'
+      },
+      {
+        name: 'Mental Health Crisis Line',
+        phone: '(334) 279-7837',
+        description: 'Montgomery area mental health crisis',
+        type: 'crisis'
+      },
+      {
+        name: '211 Information & Referral',
+        phone: '211',
+        description: 'Connect with community resources 24/7',
+        type: 'info'
+      },
+      {
+        name: 'Emergency Services',
+        phone: '911',
+        description: 'Police, Fire, Medical emergencies',
+        type: 'emergency'
+      }
+    ];
+
+    // Situation-based quick paths
+    const situations = [
+      {
+        id: 'homeless',
+        label: 'I need emergency shelter tonight',
+        emoji: '🏠',
+        services: ['emergency-shelter', 'food-meals', 'mental-health'],
+        priority: 'urgent'
+      },
+      {
+        id: 'food-insecurity',
+        label: 'I need food for my family',
+        emoji: '🍽️',
+        services: ['food-meals', 'baby-supplies'],
+        priority: 'high'
+      },
+      {
+        id: 'job-loss',
+        label: 'I just lost my job',
+        emoji: '💼',
+        services: ['job-training', 'food-meals', 'housing-assistance'],
+        priority: 'high'
+      },
+      {
+        id: 'eviction',
+        label: 'I'm facing eviction',
+        emoji: '⚠️',
+        services: ['housing-assistance', 'legal-services', 'food-meals'],
+        priority: 'urgent'
+      },
+      {
+        id: 'addiction',
+        label: 'I need help with addiction',
+        emoji: '💊',
+        services: ['addiction-treatment', 'mental-health', 'housing-assistance'],
+        priority: 'high'
+      },
+      {
+        id: 'mental-health-crisis',
+        label: 'I'm in a mental health crisis',
+        emoji: '🆘',
+        services: ['mental-health'],
+        priority: 'urgent',
+        showCrisis: true
+      },
+      {
+        id: 'domestic-violence',
+        label: 'I need to escape domestic violence',
+        emoji: '🛡️',
+        services: ['emergency-shelter', 'legal-services', 'mental-health'],
+        priority: 'urgent',
+        showCrisis: true
+      },
+      {
+        id: 'new-parent',
+        label: 'I'm a new parent and need help',
+        emoji: '👶',
+        services: ['baby-supplies', 'food-meals', 'healthcare'],
+        priority: 'medium'
+      }
+    ];
+
+    // Icons
+    const Heart = () => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    );
+
+    const CheckCircle = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    );
+
+    const ChevronRight = () => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    );
+
+    const Phone = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+      </svg>
+    );
+
+    const MapPin = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    );
+
+    const Mail = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    );
+
+    const Globe = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    );
+
+    const Clock = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    );
+
+    const Printer = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+    );
+
+    const Navigation = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+      </svg>
+    );
+
+    const AlertTriangle = () => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    );
+
+    // Utility functions
+    const isOpenNow = (hours) => {
+      if (!hours || hours.includes('24/7')) return { open: true, status: 'Open 24/7' };
+      
+      const now = new Date();
+      const day = now.toLocaleDateString('en-US', { weekday: 'short' });
+      const time = now.getHours() * 100 + now.getMinutes();
+      
+      // Simple check for Mon-Fri hours
+      if (hours.includes('Mon-Fri') && (day === 'Sat' || day === 'Sun')) {
+        return { open: false, status: 'Closed (Weekends)' };
+      }
+      
+      // Parse hours like "Mon-Fri: 8am-5pm"
+      const match = hours.match(/(\d+)am-(\d+)pm/);
+      if (match) {
+        const open = parseInt(match[1]) * 100;
+        const close = (parseInt(match[2]) + 12) * 100;
+        
+        if (time >= open && time < close) {
+          const closingHour = parseInt(match[2]);
+          const hoursUntilClose = closingHour - (now.getHours() - 12);
+          if (hoursUntilClose <= 1) {
+            return { open: true, status: 'Closing soon' };
+          }
+          return { open: true, status: 'Open now' };
+        }
+        return { open: false, status: 'Closed' };
+      }
+      
+      return { open: null, status: hours };
+    };
+
+    function NeighborHub() {
+      const [mode, setMode] = useState('home'); // home, simple, form, results, crisis, print
+      const [step, setStep] = useState(1);
+      const [simpleMode, setSimpleMode] = useState(false);
+      const [showCrisis, setShowCrisis] = useState(false);
+      const [selectedSituation, setSelectedSituation] = useState(null);
+      const [formData, setFormData] = useState({
+        firstName: '',
+        lastName: '',
+        dob: '',
+        phone: '',
+        email: '',
+        address: '',
+        city: 'Montgomery',
+        zipCode: '',
+        selectedServices: [],
+        householdSize: '',
+        hasChildren: false,
+        isVeteran: false,
+        hasDisability: false
+      });
+      const [results, setResults] = useState([]);
+      const [savedResources, setSavedResources] = useState([]);
+
+      const serviceCategories = [
+        { id: 'addiction-treatment', label: 'Addiction Treatment', emoji: '💊', color: 'from-blue-500 to-blue-600' },
+        { id: 'legal-services', label: 'Legal Services', emoji: '⚖️', color: 'from-teal-500 to-teal-600' },
+        { id: 'mental-health', label: 'Mental Health', emoji: '🧠', color: 'from-cyan-500 to-cyan-600' },
+        { id: 'housing-assistance', label: 'Housing Assistance', emoji: '🏠', color: 'from-green-500 to-green-600' },
+        { id: 'emergency-shelter', label: 'Emergency Shelter', emoji: '🛏️', color: 'from-emerald-500 to-emerald-600' },
+        { id: 'food-meals', label: 'Food & Meals', emoji: '🍽️', color: 'from-lime-500 to-lime-600' },
+        { id: 'baby-supplies', label: 'Baby Supplies', emoji: '👶', color: 'from-teal-500 to-cyan-600' },
+        { id: 'education-tutoring', label: 'Education & Tutoring', emoji: '📚', color: 'from-blue-600 to-indigo-600' },
+        { id: 'community-service', label: 'Community Service', emoji: '🤝', color: 'from-sky-500 to-sky-600' },
+        { id: 'job-training', label: 'Job Training', emoji: '💼', color: 'from-green-600 to-emerald-600' },
+        { id: 'healthcare', label: 'Healthcare', emoji: '🏥', color: 'from-teal-600 to-blue-600' },
+        { id: 'transportation', label: 'Transportation', emoji: '🚌', color: 'from-cyan-600 to-teal-600' }
+      ];
+
+      // Load saved resources from localStorage
+      useEffect(() => {
+        const saved = localStorage.getItem('neighborhub_saved');
+        if (saved) {
+          setSavedResources(JSON.parse(saved));
+        }
+      }, []);
+
+      const handleInputChange = (e) => {
+        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        setFormData({
+          ...formData,
+          [e.target.name]: value
+        });
+      };
+
+      const handleServiceToggle = (serviceId) => {
+        setFormData(prev => ({
+          ...prev,
+          selectedServices: prev.selectedServices.includes(serviceId)
+            ? prev.selectedServices.filter(id => id !== serviceId)
+            : [...prev.selectedServices, serviceId]
+        }));
+      };
+
+      const handleSituationSelect = (situation) => {
+        setSelectedSituation(situation);
+        if (situation.showCrisis) {
+          setShowCrisis(true);
+        }
+        setFormData(prev => ({
+          ...prev,
+          selectedServices: situation.services
+        }));
+        setMode('form');
+        setStep(2);
+      };
+
+      const handleSubmit = () => {
+        const matchedServices = [];
+        
+        formData.selectedServices.forEach(serviceId => {
+          const category = serviceCategories.find(cat => cat.id === serviceId);
+          const providers = serviceData[serviceId] || [];
+          
+          if (providers.length > 0) {
+            matchedServices.push({
+              category: category.label,
+              emoji: category.emoji,
+              color: category.color,
+              providers: providers
+            });
+          }
+        });
+        
+        setResults(matchedServices);
+        setMode('results');
+      };
+
+      const saveResource = (provider) => {
+        const newSaved = [...savedResources, { ...provider, savedAt: new Date().toISOString() }];
+        setSavedResources(newSaved);
+        localStorage.setItem('neighborhub_saved', JSON.stringify(newSaved));
+        alert('Resource saved! Check "My Saved Resources" anytime.');
+      };
+
+      const resetForm = () => {
+        setFormData({
+          firstName: '',
+          lastName: '',
+          dob: '',
+          phone: '',
+          email: '',
+          address: '',
+          city: 'Montgomery',
+          zipCode: '',
+          selectedServices: [],
+          householdSize: '',
+          hasChildren: false,
+          isVeteran: false,
+          hasDisability: false
+        });
+        setResults([]);
+        setSelectedSituation(null);
+        setMode('home');
+        setStep(1);
+      };
+
+      const getDirections = (address) => {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+        window.open(url, '_blank');
+      };
+
+      const printResults = () => {
+        window.print();
+      };
+
+      // Emergency Button (always visible)
+      const EmergencyButton = () => (
+        <button
+          onClick={() => setShowCrisis(!showCrisis)}
+          className="fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-full font-bold shadow-2xl hover:bg-red-700 transition-all emergency-pulse z-50 no-print flex items-center gap-2"
+        >
+          <AlertTriangle />
+          EMERGENCY
+        </button>
+      );
+
+      // Crisis Modal
+      const CrisisModal = () => (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4 no-print" onClick={() => setShowCrisis(false)}>
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-800">Crisis Resources</h2>
+                <p className="text-gray-600">Immediate help available 24/7</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              {crisisResources.map((resource, idx) => (
+                <div key={idx} className={`p-6 rounded-2xl border-2 ${
+                  resource.type === 'emergency' ? 'bg-red-50 border-red-300' :
+                  resource.type === 'crisis' ? 'bg-orange-50 border-orange-300' :
+                  'bg-blue-50 border-blue-300'
+                }`}>
+                  <h3 className="text-xl font-bold mb-2">{resource.name}</h3>
+                  <p className="text-gray-700 mb-3">{resource.description}</p>
+                  
+                    href={`tel:${resource.phone}`}
+                    className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition-all"
+                  >
+                    <Phone />
+                    Call {resource.phone}
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowCrisis(false)}
+              className="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      );
+
+      // Home Screen
+      if (mode === 'home') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 py-8 px-4">
+            <EmergencyButton />
+            {showCrisis && <CrisisModal />}
+            
+            <div className="max-w-6xl mx-auto">
+              {/* Header */}
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-green-600 rounded-2xl mb-4 shadow-lg">
+                  <Heart />
+                </div>
+                <h1 className="text-5xl md:text-6xl font-bold mb-3">
+                  <span style={{
+                    background: 'linear-gradient(to right, rgb(37, 99, 235), rgb(20, 184, 166), rgb(22, 163, 74))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    paddingBottom: '0.15em',
+                    display: 'inline-block'
+                  }}>
+                    NeighborHub
+                  </span>
+                </h1>
+                <p className="text-2xl text-gray-600 max-w-2xl mx-auto mb-6">
+                  Connecting Montgomery's community with essential services
+                </p>
+                
+                {/* Language Toggle */}
+                <div className="flex gap-2 justify-center mb-8">
+                  <button className="px-4 py-2 bg-white rounded-lg shadow hover:shadow-md transition-all">
+                    🇺🇸 English
+                  </button>
+                  <button className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-white hover:shadow-md transition-all">
+                    🇪🇸 Español
+                  </button>
+                  <button className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-white hover:shadow-md transition-all">
+                    🌐 Other
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Situation Selector */}
+              <div className="mb-12">
+                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+                  What's your situation?
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {situations.map(situation => (
+                    <button
+                      key={situation.id}
+                      onClick={() => handleSituationSelect(situation)}
+                      className={`p-6 rounded-2xl border-2 transition-all text-left hover:scale-105 hover:shadow-xl ${
+                        situation.priority === 'urgent' 
+                          ? 'bg-red-50 border-red-300 hover:bg-red-100' 
+                          : 'bg-white border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="text-4xl mb-3">{situation.emoji}</div>
+                      <h3 className="font-bold text-gray-800 mb-2">{situation.label}</h3>
+                      {situation.priority === 'urgent' && (
+                        <span className="inline-block bg-red-600 text-white text-xs px-2 py-1 rounded-full font-bold">
+                          URGENT
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Browse All Services */}
+              <div className="text-center">
+                <button
+                  onClick={() => { setMode('form'); setStep(1); }}
+                  className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all"
+                >
+                  Browse All Services →
+                </button>
+                
+                <div className="mt-6 text-gray-600">
+                  <p>Or call 2-1-1 to speak with someone 24/7</p>
+                </div>
+              </div>
+
+              {/* Quick Access Footer */}
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button className="p-4 bg-white rounded-xl shadow hover:shadow-md transition-all text-center">
+                  <div className="text-2xl mb-2">📱</div>
+                  <div className="text-sm font-semibold">Call 2-1-1</div>
+                </button>
+                <button 
+                  onClick={() => setShowCrisis(true)}
+                  className="p-4 bg-white rounded-xl shadow hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">🆘</div>
+                  <div className="text-sm font-semibold">Crisis Help</div>
+                </button>
+                <button className="p-4 bg-white rounded-xl shadow hover:shadow-md transition-all text-center">
+                  <div className="text-2xl mb-2">💾</div>
+                  <div className="text-sm font-semibold">My Saved</div>
+                </button>
+                <button 
+                  onClick={printResults}
+                  className="p-4 bg-white rounded-xl shadow hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">🖨️</div>
+                  <div className="text-sm font-semibold">Print List</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Form Mode (Step 1 & 2)
+      if (mode === 'form') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 py-8 px-4">
+            <EmergencyButton />
+            {showCrisis && <CrisisModal />}
+            
+            <div className="max-w-6xl mx-auto">
+              {/* Back Button */}
+              <button
+                onClick={() => setMode('home')}
+                className="mb-6 text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-2"
+              >
+                ← Back to Home
+              </button>
+
+              {/* Progress Bar */}
+              <div className="max-w-md mx-auto mb-12">
+                <div className="flex items-center justify-between relative">
+                  <div className="absolute top-5 left-0 right-0 h-1 bg-gray-200" style={{zIndex: -10}}></div>
+                  <div 
+                    className="absolute top-5 left-0 h-1 bg-gradient-to-r from-blue-600 to-green-600 transition-all duration-500"
+                    style={{ width: step === 1 ? '0%' : step === 2 ? '50%' : '100%', zIndex: -10 }}
+                  ></div>
+                  
+                  {[1, 2, 3].map((num) => (
+                    <div key={num} className="flex flex-col items-center">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${
+                        step >= num 
+                          ? 'bg-gradient-to-br from-blue-600 to-green-600 text-white shadow-lg scale-110' 
+                          : 'bg-white text-gray-400 border-2 border-gray-200'
+                      }`}>
+                        {step > num ? <CheckCircle /> : num}
+                      </div>
+                      <span className={`text-xs mt-2 font-medium ${step >= num ? 'text-blue-600' : 'text-gray-400'}`}>
+                        {num === 1 ? 'Info' : num === 2 ? 'Services' : 'Results'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 1: Personal Info */}
+              {step === 1 && (
+                <div className="max-w-3xl mx-auto">
+                  <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-green-100 rounded-xl flex items-center justify-center text-2xl">
+                        👤
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-bold text-gray-800">Your Information</h2>
+                        <p className="text-gray-500">Help us match you with the right resources</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">First Name *</label>
+                          <input
+                            type="text"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                            placeholder="Enter first name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name *</label>
+                          <input
+                            type="text"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                            placeholder="Enter last name"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            placeholder="(334) 555-1234"
+                            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">ZIP Code *</label>
+                          <input
+                            type="text"
+                            name="zipCode"
+                            value={formData.zipCode}
+                            onChange={handleInputChange}
+                            placeholder="36104"
+                            className="w-full px-4 py-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Eligibility Questions */}
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-6">
+                        <h3 className="font-bold text-lg mb-4 text-blue-900">Help us find the best matches (optional)</h3>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Household Size</label>
+                            <input
+                              type="number"
+                              name="householdSize"
+                              value={formData.householdSize}
+                              onChange={handleInputChange}
+                              placeholder="Number of people in household"
+                              className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                name="hasChildren"
+                                checked={formData.hasChildren}
+                                onChange={handleInputChange}
+                                className="w-5 h-5 text-blue-600"
+                              />
+                              <span className="font-medium">I have children under 18</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                name="isVeteran"
+                                checked={formData.isVeteran}
+                                onChange={handleInputChange}
+                                className="w-5 h-5 text-blue-600"
+                              />
+                              <span className="font-medium">I am a veteran</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                name="hasDisability"
+                                checked={formData.hasDisability}
+                                onChange={handleInputChange}
+                                className="w-5 h-5 text-blue-600"
+                              />
+                              <span className="font-medium">I have a disability</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setStep(2)}
+                        className="w-full mt-6 bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-green-700 transform hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2"
+                      >
+                        Continue to Services
+                        <ChevronRight />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Select Services */}
+              {step === 2 && (
+                <div className="max-w-5xl mx-auto">
+                  <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-green-100 rounded-xl flex items-center justify-center text-2xl">
+                        🔍
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-bold text-gray-800">
+                          {selectedSituation ? 'Recommended Services' : 'Choose Your Services'}
+                        </h2>
+                        <p className="text-gray-500">
+                          {selectedSituation 
+                            ? 'Based on your situation, we recommend:' 
+                            : 'Select all services you need help with'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                      {serviceCategories.map(service => {
+                        const isSelected = formData.selectedServices.includes(service.id);
+                        const isRecommended = selectedSituation?.services.includes(service.id);
+                        
+                        return (
+                          <button
+                            key={service.id}
+                            onClick={() => handleServiceToggle(service.id)}
+                            className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left ${
+                              isSelected
+                                ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-green-50 shadow-lg scale-105'
+                                : isRecommended
+                                ? 'border-yellow-400 bg-yellow-50'
+                                : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+                            }`}
+                          >
+                            {isRecommended && (
+                              <span className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs px-2 py-1 rounded-full font-bold">
+                                Recommended
+                              </span>
+                            )}
+                            <div className="flex items-start gap-3">
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all text-2xl ${
+                                isSelected 
+                                  ? `bg-gradient-to-br ${service.color} shadow-lg` 
+                                  : 'bg-gray-100'
+                              }`}>
+                                {service.emoji}
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-gray-800 mb-1">{service.label}</h3>
+                                {isSelected && (
+                                  <div className="flex items-center gap-1 text-blue-600 text-sm font-medium">
+                                    <CheckCircle />
+                                    <span>Selected</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {formData.selectedServices.length > 0 && (
+                      <div className="bg-gradient-to-r from-blue-100 to-green-100 rounded-xl p-4 mb-6">
+                        <p className="text-blue-900 font-medium">
+                          ✨ {formData.selectedServices.length} service{formData.selectedServices.length !== 1 ? 's' : ''} selected
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => setStep(1)}
+                        className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-semibold text-lg hover:bg-gray-200 transition-all"
+                      >
+                        Back
+                      </button>
+                      <button
+                        onClick={handleSubmit}
+                        disabled={formData.selectedServices.length === 0}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-green-700 transform hover:scale-105 transition-all shadow-lg disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                      >
+                        Find My Resources
+                        <span className="text-xl">🔍</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Results Mode
+      if (mode === 'results') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-green-50 py-8 px-4">
+            <EmergencyButton />
+            {showCrisis && <CrisisModal />}
+            
+            <div className="max-w-6xl mx-auto">
+              {/* Header with action buttons */}
+              <div className="no-print bg-gradient-to-r from-blue-600 to-green-600 rounded-3xl shadow-2xl p-8 text-white mb-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">Welcome, {formData.firstName}! 👋</h2>
+                    <p className="text-blue-100 text-lg">
+                      We found <span className="font-bold">{results.reduce((acc, cat) => acc + cat.providers.length, 0)} resources</span> to support you
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={printResults}
+                      className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg flex items-center gap-2"
+                    >
+                      <Printer />
+                      Print
+                    </button>
+                    <button
+                      onClick={resetForm}
+                      className="bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all shadow-lg"
+                    >
+                      New Search
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Print-only header */}
+              <div className="print-only mb-8">
+                <h1 className="text-3xl font-bold mb-2">NeighborHub - Your Resources</h1>
+                <p className="text-lg">For: {formData.firstName} {formData.lastName}</p>
+                <p className="text-sm text-gray-600">Phone: {formData.phone}</p>
+                <p className="text-sm text-gray-600">Date: {new Date().toLocaleDateString()}</p>
+                <hr className="my-4" />
+              </div>
+
+              {/* Results */}
+              {results.map((category, idx) => (
+                <div key={idx} className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-8 border border-white/20 mb-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-lg text-3xl no-print`}>
+                      {category.emoji}
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800">{category.category}</h3>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {category.providers.map((provider, providerIdx) => {
+                      const openStatus = isOpenNow(provider.hours);
+                      
+                      return (
+                        <div key={providerIdx} className="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-all">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="text-xl font-bold text-gray-800 mb-1">
+                                {provider.name}
+                              </h4>
+                              {provider.emergency && (
+                                <span className="inline-block bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold mr-2">
+                                  24/7 Emergency
+                                </span>
+                              )}
+                              {openStatus.status && (
+                                <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold ${
+                                  openStatus.open ? 'bg-green-100 text-green-700' : 
+                                  openStatus.open === false ? 'bg-red-100 text-red-700' : 
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {openStatus.status}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => saveResource(provider)}
+                              className="no-print text-blue-600 hover:text-blue-700 font-semibold text-sm"
+                            >
+                              💾 Save
+                            </button>
+                          </div>
+                          
+                          <p className="text-gray-600 mb-4 leading-relaxed">{provider.description}</p>
+                          
+                          {/* Contact Info Grid */}
+                          <div className="grid md:grid-cols-2 gap-3 mb-4">
+                            {provider.address && (
+                              <div className="flex items-start gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                                <MapPin />
+                                <span className="text-gray-700 text-sm flex-1">{provider.address}</span>
+                              </div>
+                            )}
+                            
+                            {provider.phone && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                                <Phone />
+                                <a href={`tel:${provider.phone}`} className="text-gray-700 text-sm hover:text-green-600 font-medium transition-colors flex-1">
+                                  {provider.phone}
+                                </a>
+                              </div>
+                            )}
+                            
+                            {provider.email && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                                <Mail />
+                                <a href={`mailto:${provider.email}`} className="text-gray-700 text-sm hover:text-teal-600 font-medium transition-colors truncate">
+                                  {provider.email}
+                                </a>
+                              </div>
+                            )}
+                            
+                            {provider.website && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100">
+                                <Globe />
+                                <a href={`https://${provider.website}`} target="_blank" rel="noopener noreferrer" className="text-gray-700 text-sm hover:text-cyan-600 font-medium transition-colors truncate">
+                                  {provider.website}
+                                </a>
+                              </div>
+                            )}
+                            
+                            {provider.hours && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 md:col-span-2">
+                                <Clock />
+                                <span className="text-gray-700 text-sm font-medium">{provider.hours}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 flex-wrap no-print">
+                            
+                              href={`tel:${provider.phone}`}
+                              className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
+                            >
+                              <Phone />
+                              Call Now
+                            </a>
+                            {provider.address && (
+                              <button
+                                onClick={() => getDirections(provider.address)}
+                                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+                              >
+                                <Navigation />
+                                Get Directions
+                              </button>
+                            )}
+                            <button
+                              onClick={() => alert(`SMS feature coming soon! For now, save this number: ${provider.phone}`)}
+                              className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-all"
+                            >
+                              📱 Text Me Info
+                            </button>
+                          </div>
+
+                          {/* What to Bring */}
+                          {provider.documentsNeeded && provider.documentsNeeded.length > 0 && (
+                            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                              <h5 className="font-bold text-yellow-900 mb-2">📋 What to Bring:</h5>
+                              <ul className="list-disc list-inside text-sm text-yellow-800 space-y-1">
+                                {provider.documentsNeeded.map((doc, i) => (
+                                  <li key={i}>{doc}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Additional Info */}
+                          <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm">
+                            {provider.eligibility && (
+                              <div className="p-3 bg-blue-50 rounded-lg">
+                                <span className="font-semibold text-blue-900">Eligibility: </span>
+                                <span className="text-blue-700">{provider.eligibility.income || 'Contact for details'}</span>
+                              </div>
+                            )}
+                            {provider.waitTime && (
+                              <div className="p-3 bg-purple-50 rounded-lg">
+                                <span className="font-semibold text-purple-900">Wait Time: </span>
+                                <span className="text-purple-700">{provider.waitTime}</span>
+                              </div>
+                            )}
+                            {provider.languages && (
+                              <div className="p-3 bg-green-50 rounded-lg">
+                                <span className="font-semibold text-green-900">Languages: </span>
+                                <span className="text-green-700">{provider.languages.join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Help Footer */}
+              <div className="bg-gradient-to-r from-teal-500 to-blue-500 rounded-3xl shadow-2xl p-8 text-white">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Phone />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">Need More Help?</h3>
+                    <p className="text-teal-100 mb-4 text-lg">
+                      Call <span className="font-bold text-white">2-1-1</span> or <span className="font-bold text-white">(334) 263-7000</span> to speak with a trained specialist 24/7
+                    </p>
+                    <p className="text-teal-100 text-sm">
+                      🚨 In case of emergency, always dial <span className="font-bold text-white">9-1-1</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    ReactDOM.render(<NeighborHub />, document.getElementById('root'));
+  </script>
+</body>
+</html>
